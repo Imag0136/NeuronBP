@@ -9,10 +9,10 @@ namespace NeuronBP
 {
     public static class MnistReader
     {
-        private const string TrainImages = @"../../Resources/mnist/train-images.idx3-ubyte";
-        private const string TrainLabels = @"../../Resources/mnist/train-labels.idx1-ubyte";
-        private const string TestImages = @"../../Resources/mnist/t10k-images.idx3-ubyte";
-        private const string TestLabels = @"../../Resources/mnist/t10k-labels.idx1-ubyte";
+        private const string TrainImages = @"../../../Resources/mnist/train-images.idx3-ubyte";
+        private const string TrainLabels = @"../../../Resources/mnist/train-labels.idx1-ubyte";
+        private const string TestImages = @"../../../Resources/mnist/t10k-images.idx3-ubyte";
+        private const string TestLabels = @"../../../Resources/mnist/t10k-labels.idx1-ubyte";
 
         public static IEnumerable<Image> ReadTrainingData()
         {

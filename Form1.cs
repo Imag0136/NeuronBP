@@ -28,6 +28,44 @@ namespace NeuronBP
             neuron.Learn();
         }
 
+        
+
+        private void LoadWeight_Click(object sender, EventArgs e)
+        {
+            //OpenFileDialog ofd = new OpenFileDialog();
+            //ofd.Filter = "Image Files(*.BMP;*.JPG;*.PNG)|*.BMP;*.JPG;*.PNG";
+            //if (ofd.ShowDialog() == DialogResult.OK)
+            //{
+            //    img = new Bitmap(ofd.FileName);
+            //    pictureBox1.Image = img;
+            //}
+
+            neuron.MnistCheck();
+        }
+
+
+
+        private void SaveButton_Click(object sender, EventArgs e)
+        {
+            if (pictureBox1.Image != null) //если в pictureBox есть изображение
+            {
+                DateTime now = DateTime.Now;
+                pictureBox1.Image.Save($"{incr}.jpg");
+                incr += 1;
+            }
+        }
+
+        private void recognizeButton_Click_1(object sender, EventArgs e)
+        {
+            neuron.Recognize(img);
+            pictureBox1.Image = new Bitmap(pictureBox1.Width, pictureBox1.Height);
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            pictureBox1.Image = new Bitmap(pictureBox1.Width, pictureBox1.Height);
+        }
+
         private void pictureBox1_MouseDown(object sender, MouseEventArgs e)
         {
             old = e.Location;
@@ -44,40 +82,6 @@ namespace NeuronBP
                 pictureBox1.Image = img;
                 old = current;
             }
-        }
-
-        private void LoadWeight_Click(object sender, EventArgs e)
-        {
-            //OpenFileDialog ofd = new OpenFileDialog();
-            //ofd.Filter = "Image Files(*.BMP;*.JPG;*.PNG)|*.BMP;*.JPG;*.PNG";
-            //if (ofd.ShowDialog() == DialogResult.OK)
-            //{
-            //    img = new Bitmap(ofd.FileName);
-            //    pictureBox1.Image = img;
-            //}
-
-            neuron.MnistCheck();
-        }
-
-        private void Form1_Load(object sender, EventArgs e)
-        {
-            pictureBox1.Image = new Bitmap(pictureBox1.Width, pictureBox1.Height);
-        }
-
-        private void SaveButton_Click(object sender, EventArgs e)
-        {
-            if (pictureBox1.Image != null) //если в pictureBox есть изображение
-            {
-                DateTime now = DateTime.Now;
-                pictureBox1.Image.Save($"{incr}.jpg");
-                incr += 1;
-            }
-        }
-
-        private void recognizeButton_Click(object sender, EventArgs e)
-        {
-            neuron.Recognize(img);
-            pictureBox1.Image = new Bitmap(pictureBox1.Width, pictureBox1.Height);
         }
     }
 }

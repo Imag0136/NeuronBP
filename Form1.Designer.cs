@@ -32,6 +32,7 @@ namespace NeuronBP
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.recognizeButton = new System.Windows.Forms.Button();
+            this.textBox1 = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
             // 
@@ -40,31 +41,45 @@ namespace NeuronBP
             this.pictureBox1.BackColor = System.Drawing.Color.White;
             this.pictureBox1.Location = new System.Drawing.Point(26, 24);
             this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(149, 137);
+            this.pictureBox1.Size = new System.Drawing.Size(100, 100);
             this.pictureBox1.TabIndex = 0;
             this.pictureBox1.TabStop = false;
+            this.pictureBox1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.pictureBox1_MouseDown);
+            this.pictureBox1.MouseMove += new System.Windows.Forms.MouseEventHandler(this.pictureBox1_MouseMove);
             // 
             // recognizeButton
             // 
-            this.recognizeButton.Location = new System.Drawing.Point(42, 200);
+            this.recognizeButton.Location = new System.Drawing.Point(26, 158);
             this.recognizeButton.Name = "recognizeButton";
             this.recognizeButton.Size = new System.Drawing.Size(114, 37);
             this.recognizeButton.TabIndex = 1;
             this.recognizeButton.Text = "Распознать";
             this.recognizeButton.UseVisualStyleBackColor = true;
+            this.recognizeButton.Click += new System.EventHandler(this.recognizeButton_Click_1);
+            // 
+            // textBox1
+            // 
+            this.textBox1.Location = new System.Drawing.Point(318, 24);
+            this.textBox1.Multiline = true;
+            this.textBox1.Name = "textBox1";
+            this.textBox1.Size = new System.Drawing.Size(141, 282);
+            this.textBox1.TabIndex = 2;
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(471, 318);
+            this.Controls.Add(this.textBox1);
             this.Controls.Add(this.recognizeButton);
             this.Controls.Add(this.pictureBox1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Form1";
             this.Text = "Form1";
+            this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -72,6 +87,7 @@ namespace NeuronBP
 
         private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.Button recognizeButton;
+        private System.Windows.Forms.TextBox textBox1;
     }
 }
 

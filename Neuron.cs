@@ -16,7 +16,7 @@ namespace NeuronBP
         double delta;
         int y; //фактический результат
         int yk; //ожидаемый результат
-        int[][,] data = new int[60000][,];
+        int[,,] data = new int[60000, 28, 28];
         byte[] label = new byte[60000];
         //Bitmap img;
 
@@ -38,7 +38,7 @@ namespace NeuronBP
 
         public void Learn()
         {
-            if (File.Exists(@"../../Resources/weight.txt")) LoadWeight();
+            if (File.Exists(@"../../../Resources/weight.txt")) LoadWeight();
             else
             {
                 //t += 1;
@@ -74,7 +74,7 @@ namespace NeuronBP
                     {
                         for (int j = 0; j < 28; j++)
                         {
-                            data[imgCount][i, j] = image.Data[i, j] == 0 ? 0 : 1;
+                            data[imgCount, i, j] = image.Data[i, j] == 0 ? 0 : 1;
                         }
                     }
                     label[imgCount] = image.Label;
@@ -100,7 +100,7 @@ namespace NeuronBP
                     {
                         for (int j = 0; j < 28; j++)
                         {
-                            sum += data[img][i, j] / 255 * weight[n, i, j];
+                            sum += data[img, i, j] * weight[n, i, j];
                         }
                     }
                     y = sum > limit ? 1 : 0;
@@ -112,14 +112,14 @@ namespace NeuronBP
                         {
                             for (int j = 0; j < 28; j++)
                             {
-                                if (data[img][i, j] / 255 == 1) weight[n, i, j] += alpha * delta;
+                                if (data[img, i, j] == 1) weight[n, i, j] += alpha * delta;
                             }
                         }
                         error++;
                     }
                 }
             }
-            Console.WriteLine($"t = {t}");
+            Console.WriteLine($"t = {t}");            
             Console.WriteLine($"error = {error}");
             if (error > 20) MnistCheck();
             SaveWeight();
@@ -207,7 +207,7 @@ namespace NeuronBP
 
         public void SaveWeight()
         {
-            StreamWriter sw = new StreamWriter(@"../../Resources/weight.txt");
+            StreamWriter sw = new StreamWriter(@"../../../Resources/weight.txt");
             for (int n = 0; n < weight.GetLength(0); n++)
             {
                 for (int i = 0; i < weight.GetLength(1); i++)
@@ -223,7 +223,7 @@ namespace NeuronBP
 
         public void LoadWeight()
         {
-            var sr = new StreamReader(@"../../Resources/weight.txt");
+            var sr = new StreamReader(@"../../../Resources/weight.txt");
             for (int n = 0; n < weight.GetLength(0); n++)
             {
                 for (int i = 0; i < weight.GetLength(1); i++)
