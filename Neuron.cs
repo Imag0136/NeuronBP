@@ -65,7 +65,7 @@ namespace NeuronBP
                 //Console.WriteLine($"error = {error}");
                 //if (error > 0) Learn();
                 //SaveWeight();
-                //chee
+
                 //Считывание dataset
                 int imgCount = 0;
                 foreach (var image in MnistReader.ReadTrainingData())
