@@ -1,86 +1,121 @@
 ﻿using System;
 using System.Drawing;
 using System.IO;
-using System.Windows.Forms;
 
 namespace NeuronBP
 {
     public class Neuron
     {
-        byte t = 0; //номер эпохи
-        byte error = 0;
+        /// <summary>
+        /// Количество картинок
+        /// </summary>
+        const int PicturesCount = 60000;
+        /// <summary>
+        /// Высота картинки
+        /// </summary>
+        const byte PictureHeight = 28;
+        /// <summary>
+        /// Ширина картинки
+        /// </summary>
+        const byte PictureWidth = 28;
+        /// <summary>
+        /// Количество входов сети
+        /// </summary>
+        const int InputCount = PictureHeight * PictureWidth;
+        /// <summary>
+        /// Количество выходов сети
+        /// </summary>
+        const byte OutputCount = 10;
+        /// <summary>
+        /// Параметр скорости обучения
+        /// </summary>
+        const double Alpha = 0.5;
+        /// <summary>
+        /// Максимально допустимое число итераций
+        /// </summary>
+        const int Nmax = 300;
+        /// <summary>
+        /// Количество нейронов на скрытом слое
+        /// </summary>
+        const byte HiddenNeuronCount = 20;
+        /// <summary>
+        /// Параметр точности обучения
+        /// </summary>
+        double Epsilon;
+        
+
+        int t = 0; //номер эпохи
+        int error = 0;
+        int error2 = 0;
         int limit = 0;
-        double[,,] weight = new double[10, 28, 28]; //матрица весовых коэффициентов
-        int[] input = new int[28];
-        double alpha = 0.4; //Скорость обучения
+
+        /// <summary>
+        /// Матрица весовых коэффициентов от входов к скрытому слою
+        /// </summary>
+        double[,] W = new double[InputCount, HiddenNeuronCount];
+        /// <summary>
+        /// Матрица весов, соединяющих скрытый и выходной слой
+        /// </summary>
+        double[,] V = new double[HiddenNeuronCount, OutputCount];
+
+        int[] input = new int[PictureHeight * PictureWidth];    
+   
         double delta;
+        /// <summary>
+        /// Полученное реальное значение k-го выхода нейросети
+        /// </summary>
         int y; //фактический результат
         int yk; //ожидаемый результат
-        int[,,] data = new int[60000, 28, 28];
-        byte[] label = new byte[60000];
-        //Bitmap img;
+        int[,] trainImages = new int[PicturesCount, InputCount];
+        int[] trainLabels = new int[PicturesCount];
+        int[,] testImages = new int[10000, InputCount];
+        int[] testLabels = new int[10000];
 
-        public Neuron()
-        {
-            //Установление случайных весов
-            Random rand = new Random((int)DateTime.Now.Ticks);
-            for (int n = 0; n < 10; n++)
-            {
-                for (int i = 0; i < 28; i++)
-                {
-                    for (int j = 0; j < 28; j++)
-                    {
-                        weight[n, i, j] = Convert.ToDouble(rand.Next(-3, 4) / 10.0);
-                    }
-                }
-            }            
-        }
+        //yk – полученное реальное значение k-го выхода нейросети при подаче
+        //на нее одного из входных образов обучающей выборки; dk – требуемое(целевое)
+        //значение k-го выхода для этого образа.
 
         public void Learn()
         {
             if (File.Exists(@"../../../Resources/weight.txt")) LoadWeight();
             else
             {
-                //t += 1;
-                //error = 0;
-                //for (int k = 0; k < 50; k++)
-                //{
-                //    //img = (Bitmap)Image.FromFile($"../../Resources/{k}.jpg");                    
-                //    for (int n = 0; n < 10; n++)
-                //    {
-                //        y = Sum(n, img) > limit ? 1 : 0;
-                //        yk = n == (k / 5) ? 1 : 0;
-                //        if (y != yk)
-                //        {
-                //            delta = yk - y;
-                //            for (int i = 0; i < 100; i++)
-                //            {
-                //                if (input[i] == 1) weight[n, i, i] += alpha * delta;
-                //            }
-                //            error++;
-                //        }
-                //    }
-                //}                
-                //Console.WriteLine($"t = {t}");
-                //Console.WriteLine($"error = {error}");
-                //if (error > 0) Learn();
-                //SaveWeight();
-
                 //Считывание dataset
                 int imgCount = 0;
                 foreach (var image in MnistReader.ReadTrainingData())
                 {
-                    for (int i = 0; i < 28; i++)
+                    int k = 0;
+                    for (int i = 0; i < PictureHeight; i++)
                     {
-                        for (int j = 0; j < 28; j++)
+                        for (int j = 0; j < PictureWidth; j++)
                         {
-                            data[imgCount, i, j] = image.Data[i, j] == 0 ? 0 : 1;
+                            trainImages[imgCount, k++] = image.Data[i, j] > 0? 1 : 0;
                         }
                     }
-                    label[imgCount] = image.Label;
-                    imgCount++;
+                    trainLabels[imgCount++] = image.Label;
+                }
+                imgCount = 0;
+                foreach (var image in MnistReader.ReadTestData())
+                {
+                    int k = 0;
+                    for (int i = 0; i < PictureHeight; i++)
+                    {
+                        for (int j = 0; j < PictureWidth; j++)
+                        {
+                            testImages[imgCount, k++] = image.Data[i, j] > 0 ? 1 : 0;
+                        }
+                    }
+                    testLabels[imgCount++] = image.Label;
                 }
 
+                Random rand = new Random((int)DateTime.Now.Ticks);
+                for (int n = 0; n < OutputCount; n++)
+                {
+                    for (int i = 0; i < PictureHeight * PictureWidth; i++)
+                    {
+                        W[n, i] = Convert.ToDouble(rand.Next(-3, 4) / 10.0);
+                    }
+                }
                 MnistCheck();
             }
         }
@@ -89,39 +124,57 @@ namespace NeuronBP
         {
             t += 1;
             error = 0;
+            error2 = 0;
             double sum;
 
-            for (int img = 0; img < 60000; img++)
+            for (int img = 0; img < PicturesCount; img++)
             {
-                for (int n = 0; n < 10; n++)
+                for (int n = 0; n < OutputCount; n++)
                 {
                     sum = 0;
-                    for (int i = 0; i < 28; i++)
+                    for (int i = 0; i < PictureHeight * PictureWidth; i++)
                     {
-                        for (int j = 0; j < 28; j++)
-                        {
-                            sum += data[img, i, j] * weight[n, i, j];
-                        }
+                        sum += trainImages[img, i] * W[n, i];                      
                     }
                     y = sum > limit ? 1 : 0;
-                    yk = n == label[img] ? 1 : 0;
+                    yk = n == trainLabels[img] ? 1 : 0;
                     if (y != yk)
                     {
                         delta = yk - y;
-                        for (int i = 0; i < 28; i++)
+                        for (int i = 0; i < PictureHeight * PictureWidth; i++)
                         {
-                            for (int j = 0; j < 28; j++)
-                            {
-                                if (data[img, i, j] == 1) weight[n, i, j] += alpha * delta;
-                            }
+                            if (trainImages[img, i] == 1) W[n, i] += Alpha * delta;
                         }
                         error++;
                     }
                 }
             }
-            Console.WriteLine($"t = {t}");            
+
+            for (int img = 0; img < 10000; img++)
+            {
+                for (int n = 0; n < OutputCount; n++)
+                {
+                    sum = 0;
+                    for (int i = 0; i < PictureHeight * PictureWidth; i++)
+                    {
+                        sum += testImages[img, i] * W[n, i];
+                    }
+                    y = sum > limit ? 1 : 0;
+                    yk = n == testLabels[img] ? 1 : 0;
+                    if (y != yk)
+                    {
+                        error2++;
+                    }
+                }
+            }
+            Console.WriteLine($"t = {t}");
             Console.WriteLine($"error = {error}");
-            if (error > 20) MnistCheck();
+            Console.WriteLine($"error2 = {error2}");
+            if (t == 20)
+            {
+                Console.WriteLine("esf");
+            }
+            if (error > 0) MnistCheck();
             SaveWeight();
         }
 
@@ -130,15 +183,15 @@ namespace NeuronBP
             double sum = 0; //сумма
             int[,] imgArray = new int[img.Width, img.Height]; //матрица входов
             LeadArray(CutImage(img, new Point(img.Width, img.Height)), input);
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < PictureHeight * PictureWidth; i++)
             {
-                sum += input[i] * weight[n, i, i];
+                sum += input[i] * W[n, i];                             
             }
             return sum;
         }
 
         // Процедура обрезание рисунка по краям и преобразование в массив.
-        public static int[,] CutImage(Bitmap b, Point max)
+        public int[,] CutImage(Bitmap b, Point max)
         {
             var x1 = 0;
             var y1 = 0;
@@ -181,8 +234,8 @@ namespace NeuronBP
         // Пересчёт матрицы source в массив res, для приведения произвольного массива данных к массиву стандартных размеров.
         public void LeadArray(int[,] source, int[] ans)
         {
+            int k = 0;
             int[,] res = new int[28, 28];
-            byte k = 0;
             for (var n = 0; n < res.GetLength(0); n++)
                 for (var m = 0; m < res.GetLength(1); m++) res[n, m] = 0;
 
@@ -190,12 +243,14 @@ namespace NeuronBP
             var pY = (double)res.GetLength(1) / (double)source.GetLength(1);
 
             for (var n = 0; n < source.GetLength(0); n++)
+            {
                 for (var m = 0; m < source.GetLength(1); m++)
                 {
                     var posX = (int)(n * pX);
                     var posY = (int)(m * pY);
                     if (res[posX, posY] == 0) res[posX, posY] = source[n, m];
                 }
+            }
             for (int i = 0; i < res.GetLength(0); i++)
             {
                 for (int j = 0; j < res.GetLength(1); j++)
@@ -208,48 +263,42 @@ namespace NeuronBP
         public void SaveWeight()
         {
             StreamWriter sw = new StreamWriter(@"../../../Resources/weight.txt");
-            for (int n = 0; n < weight.GetLength(0); n++)
+            for (int n = 0; n < 10; n++)
             {
-                for (int i = 0; i < weight.GetLength(1); i++)
+                for (int i = 0; i < PictureHeight * PictureWidth; i++)
                 {
-                    for (int j = 0; j < weight.GetLength(2); j++)
-                    {
-                        sw.WriteLine(weight[n, i, j].ToString());
-                    }
+                    sw.WriteLine(W[n, i].ToString());
                 }
-            }
+            }            
             sw.Close();
         }
 
         public void LoadWeight()
         {
             var sr = new StreamReader(@"../../../Resources/weight.txt");
-            for (int n = 0; n < weight.GetLength(0); n++)
+            for (int n = 0; n < 10; n++)
             {
-                for (int i = 0; i < weight.GetLength(1); i++)
+                for (int i = 0; i < PictureHeight * PictureWidth; i++)
                 {
-                    for (int j = 0; j < weight.GetLength(2); j++)
-                    {
-                        weight[n, i, i] = Convert.ToDouble(sr.ReadLine());
-                    }
+                    W[n, i] = Convert.ToDouble(sr.ReadLine());                    
                 }
             }
             sr.Close();
         }
         public void Recognize(Bitmap img)
         {
-            for (int n = 0; n < 10; n++)
-            {
-                if (Sum(n, img) > limit)
-                {
-                    MessageBox.Show($"Это {n}");
-                    break;
-                }
-                else if (n == 9)
-                {
-                    MessageBox.Show($"Не знаю ( ╯°□°)╯ ┻━━┻");
-                }
-            };
+            //for (int n = 0; n < 10; n++)
+            //{
+                //if (Sum(n, img) > limit)
+                //{
+                //    MessageBox.Show($"Это {n}");
+                //    break;
+                //}
+                //else if (n == 9)
+                //{
+                //    MessageBox.Show($"Не знаю ( ╯°□°)╯ ┻━━┻");
+                //}                
+            //};
         }
 
     }
