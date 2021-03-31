@@ -12,62 +12,77 @@ namespace NeuronBP
         /// Количество картинок обучающей выборки
         /// </summary>
         const int trainPicturesCount = 100;
+
         /// <summary>
         /// Количество картинок тестовой выборки
         /// </summary>
         const int testPicturesCount = 20;
+
         /// <summary>
         /// Высота картинки
         /// </summary>
         const byte pictureHeight = 10;
+        
         /// <summary>
         /// Ширина картинки
         /// </summary>
         const byte pictureWidth = 10;
+        
         /// <summary>
         /// Количество входов сети n
         /// </summary>
         const int inputCount = pictureHeight * pictureWidth;
+        
         /// <summary>
         /// Количество нейронов на скрытом слое m
         /// </summary>
         const int hiddenNeuronCount = 20;
+        
         /// <summary>
         /// Количество выходов сети p
         /// </summary>
         const byte outputCount = 10;
+        
         /// <summary>
         /// Параметр скорости обучения
         /// </summary>
-        const float alpha = 0.3f;
+        const float alpha = 0.1f;
+        
         /// <summary>
         /// Максимально допустимое число итераций
         /// </summary>
         const int nmax = 1000;        
+        
         /// <summary>
         /// Параметр точности обучения на обучающей выборке
         /// </summary>
         float epsilonTrain = 0.0f;
+        
         /// <summary>
         /// Параметр точности обучения на тестовой выборке
         /// </summary>
         float epsilonTest = 0.0f;
+        
         /// <summary>
         /// Номер эпохи
         /// </summary>
         int epoch = 0;
+        
         /// <summary>
         /// Ошибка на обучающей выборке
         /// </summary>
         int errorTrain = 0;
+        
         /// <summary>
         /// Ошибка на тестовой выборке
         /// </summary>
         int errorTest = 0;
+        
         /// <summary>
         /// Матрица весовых коэффициентов от входов к скрытому слою
         /// </summary>
         float[,] w = new float[inputCount, hiddenNeuronCount];
+        
         /// <summary>
         /// Матрица весов, соединяющих скрытый и выходной слой
         /// </summary>
@@ -77,14 +92,17 @@ namespace NeuronBP
         /// <summary>
         /// Полученное реальное значение k-го выхода нейросети
         /// </summary>
+        
         float[] y = new float[outputCount];
         /// <summary>
         /// Требуемое(целевое) значение k-го выхода для этого образа
         /// </summary>
+        
         int[] d = new int[outputCount];
         /// <summary>
         /// Входной вектор
         /// </summary>
+        
         int[] input = new int[inputCount];
 
         int[,] trainImages = new int[trainPicturesCount, inputCount];
@@ -95,33 +113,6 @@ namespace NeuronBP
         string[] trainImg = new string[trainPicturesCount];
         string[] testImg = new string[testPicturesCount];
         public Bitmap picture;
-
-
-        void ShuffleTrain()
-        {
-            Random rand = new Random();
-            for (int i = 0; i < trainImg.Length; i++)
-            {
-                int rnd = rand.Next();
-                int j = rnd % (i + 1);
-                string tmp = trainImg[j];
-                trainImg[j] = trainImg[i];
-                trainImg[i] = tmp;
-            }
-        }
-
-        void ShuffleTest()
-        {
-            Random rand = new Random();
-            for (int i = 0; i < testImg.Length; i++)
-            {
-                int rnd = rand.Next();
-                int j = rnd % (i + 1);
-                string tmp = testImg[j];
-                testImg[j] = testImg[i];
-                testImg[i] = tmp;
-            }
-        }
 
         public void Learn()
         {
@@ -180,31 +171,90 @@ namespace NeuronBP
             }
         }
 
-        public string[] RandomImageForLearn(int size)
+        public void Train()
         {
-            string[] randomList = new string[size];
-            for (int i = 0; i < size; i++)
+            epoch++;
+            errorTrain = 0;
+            errorTest = 0;
+            epsilonTrain = 0;
+            epsilonTest = 0;
+            ShuffleTrain();
+            ShuffleTest();
+
+            for (int img = 0; img < trainPicturesCount; img++)
             {
-                randomList[i] = $"{i}";
+                epsilonTrain = 0;
+                picture = (Bitmap)Image.FromFile($"../../../Resources/train/{trainImg[img]}.jpg");
+                int label = int.Parse(trainImg[img]) / (trainPicturesCount / outputCount);
+                for (int i = 0; i < outputCount; i++)
+                {
+                    d[i] = i == label ? 1 : 0;
+                }
+                Sum(picture);
+                WeightCorrect();
+
+                for (int k = 0; k < outputCount; k++)
+                {
+                    epsilonTrain += (float)Math.Pow(y[k] - d[k], 2);
+                }
+
+                epsilonTrain /= 10;
+
+                if (epsilonTrain > 0.01)
+                {
+                    errorTrain++;
+                }
             }
-            return randomList;
+
+            for (int img = 0; img < testPicturesCount; img++)
+            {
+                epsilonTest = 0;
+                picture = (Bitmap)Image.FromFile($"../../../Resources/test/{testImg[img]}.jpg");
+                int label = int.Parse(testImg[img]) / (testPicturesCount / outputCount);
+                for (int i = 0; i < outputCount; i++)
+                {
+                    d[i] = i == label ? 1 : 0;
+                }
+                Sum(picture);
+
+                for (int k = 0; k < outputCount; k++)
+                    epsilonTest += (float)Math.Pow(y[k] - d[k], 2);
+
+                epsilonTest /= 10;
+
+                if (epsilonTest > 0.01)
+                {
+                    errorTest++;
+                }
+            }
+
+            Debug.WriteLine($"Эпоха = {epoch}");
+            Debug.WriteLine($"error1 = {errorTrain}");
+            Debug.WriteLine($"error2 = {errorTest}");
+            Debug.WriteLine($"epsilon1 = {epsilonTrain}");
+            Debug.WriteLine($"epsilon2 = {epsilonTest}");
+            Debug.WriteLine("");
+
+            if (epsilonTest < 0.001)
+            {
+
+            }
+            if (errorTest > 30 && epoch < nmax)
+            {
+                Train();
+            }
+            else
+            {
+                Debug.WriteLine("Обучился");
+                //SaveWeight();
+            }
         }
 
-        /// <summary>
-        /// Активационная функция - сигмоида
-        /// </summary>
-        /// <param name="x">Сумма весов нейрона</param>
-        /// <returns></returns>
-        static float SigmoidFunction(float x)
-        {
-            return 1f / (1f + (float)Math.Exp(-x));
-        }
-
-        void Sum(Bitmap bitmap)
+        void Sum(Bitmap img)
         {
             float[] HiddenLayerSum = new float[hiddenNeuronCount];
             float[] OutputLayerSum = new float[outputCount];
-            LeadArray(CutImage(bitmap, new Point(bitmap.Width, bitmap.Height)), input);
+            LeadArray(CutImage(img, new Point(img.Width, img.Height)), input);
 
             for (int j = 0; j < hiddenNeuronCount; j++)
             {
@@ -226,12 +276,22 @@ namespace NeuronBP
                 }
                 y[k] = SigmoidFunction(OutputLayerSum[k]);
             }
-        }        
+        }
+
+        /// <summary>
+        /// Активационная функция - сигмоида
+        /// </summary>
+        /// <param name="x">Сумма весов нейрона</param>
+        /// <returns></returns>
+        static float SigmoidFunction(float x)
+        {
+            return 1f / (1f + (float)Math.Exp(-x));
+        }
 
         void WeightCorrect()
         {
             float[] sum = new float[hiddenNeuronCount];
-            for (int k = 0; k < outputCount; k++) 
+            for (int k = 0; k < outputCount; k++)
             {
                 float delta = (y[k] - d[k]) * y[k] * (1f - y[k]);
                 for (int j = 0; j < hiddenNeuronCount; j++)
@@ -240,7 +300,6 @@ namespace NeuronBP
                     sum[j] += delta * v[j, k];
                 }
             }
-
             for (int j = 0; j < hiddenNeuronCount; j++)
             {
                 for (int i = 0; i < inputCount; i++)
@@ -253,131 +312,47 @@ namespace NeuronBP
             }
         }
 
-        public void Train()
+        void ShuffleTrain()
         {
-            epoch++;
-            errorTrain = 0;
-            errorTest = 0;
-            epsilonTrain = 0;
-            epsilonTest = 0;
-            ShuffleTrain();
-            ShuffleTest();
-
-            for (int img = 0; img < trainPicturesCount; img++)
+            Random rand = new Random();
+            for (int i = 0; i < trainImg.Length; i++)
             {
-                picture = (Bitmap)Image.FromFile($"../../../Resources/train/{trainImg[img]}.jpg");
-                int label = int.Parse(trainImg[img]) / (trainPicturesCount / outputCount);
-                for (int i = 0; i < outputCount; i++)
-                {
-                    d[i] = i == label ? 1 : 0;
-                }
-                Sum(picture);
-                WeightCorrect();
-
-                for (int k = 0; k < outputCount; k++)
-                {
-                    epsilonTrain += (float)Math.Pow(y[k] - d[k], 2);
-                }
-
-                epsilonTrain /= 2;
-
-                if (epsilonTrain > 0.01)
-                {
-                    errorTrain++;
-                }
-            }
-
-            for (int img = 0; img < testPicturesCount; img++)
-            {
-                picture = (Bitmap)Image.FromFile($"../../../Resources/test/{testImg[img]}.jpg");
-                int label = int.Parse(testImg[img]) / (testPicturesCount / outputCount);
-                for (int i = 0; i < outputCount; i++)
-                {
-                    d[i] = i == label ? 1 : 0;
-                }
-                Sum(picture);
-
-                for (int k = 0; k < outputCount; k++)
-                    epsilonTest += (float)Math.Pow(y[k] - d[k], 2);
-
-                epsilonTest /= 2;
-
-                if (epsilonTest > 0.01)
-                {
-                    errorTest++;
-                }
-            }
-
-            //for (int img = 0; img < 500; img++)
-            //{
-            //    OutputTest(img);
-
-            //    for (int k = 0; k < outputCount; k++)
-            //        epsilon2 += (float)Math.Pow(y[k] - d[k], 2);
-
-            //    epsilon2 /= 2;
-
-            //    if (epsilon2 > 0.01)
-            //    {
-            //        error2++;
-            //    }
-            //}
-
-            Debug.WriteLine($"Эпоха = {epoch}");
-            Debug.WriteLine($"error1 = {errorTrain}");
-            Debug.WriteLine($"error2 = {errorTest}");
-            Debug.WriteLine($"epsilon1 = {epsilonTrain}");
-            Debug.WriteLine($"epsilon2 = {epsilonTest}");
-            Debug.WriteLine("");
-
-            if (epsilonTest < 0.005)
-            {
-
-            }
-            if (epsilonTest > 0.005 && epoch < nmax)
-            {
-                Train();
-            }
-            else
-            {
-                Debug.WriteLine("Обучился");
-                //SaveWeight();
+                int rnd = rand.Next();
+                int j = rnd % (i + 1);
+                string tmp = trainImg[j];
+                trainImg[j] = trainImg[i];
+                trainImg[i] = tmp;
             }
         }
 
-        public double Sefsefum(int n, Bitmap img)
+        void ShuffleTest()
         {
-            float ymax = 0f;
-            float ymin = 0f;
-            LeadArray(CutImage(img, new Point(img.Width, img.Height)), input);
-            float[] HiddenLayerSum = new float[hiddenNeuronCount];
-            float[] OutputLayerSum = new float[outputCount];
-            Array.Clear(HiddenLayerSum, 0, HiddenLayerSum.Length);
-            Array.Clear(OutputLayerSum, 0, OutputLayerSum.Length);
-
-            for (int j = 0; j < hiddenNeuronCount; j++)
+            Random rand = new Random();
+            for (int i = 0; i < testImg.Length; i++)
             {
-                for (int i = 0; i < inputCount; i++)
-                {
-                    if (input[i] != 0)
-                    {
-                        HiddenLayerSum[j] += input[i] * w[i, j];
-                    }
-                }
+                int rnd = rand.Next();
+                int j = rnd % (i + 1);
+                string tmp = testImg[j];
+                testImg[j] = testImg[i];
+                testImg[i] = tmp;
             }
+        }
 
-            for (int k = 0; k < outputCount; k++)
+        public string[] RandomImageForLearn(int size)
+        {
+            string[] randomList = new string[size];
+            for (int i = 0; i < size; i++)
             {
-                for (int j = 0; j < hiddenNeuronCount; j++)
-                {
-                    OutputLayerSum[k] += SigmoidFunction(HiddenLayerSum[j]) * v[j, k];
-                }
+                randomList[i] = $"{i}";
             }
+            return randomList;
+        }
 
-            for (int k = 0; k < outputCount; k++)
-            {
-                y[k] = SigmoidFunction(OutputLayerSum[k]);
-            }
+        public double Recognize(int n, Bitmap img)
+        {
+            double ymax = 0d;
+            double ymin = 0d;
+            Sum(img);
             for (int k = 0; k < outputCount; k++)
             {
                 if (ymax < y[k]) ymax = y[k];
@@ -499,21 +474,6 @@ namespace NeuronBP
             }
             vStreamReader.Close();
         }
-        public void Recognize(Bitmap img)
-        {
-            //for (int n = 0; n < 10; n++)
-            //{
-                //if (Sum(n, img) > limit)
-                //{
-                //    MessageBox.Show($"Это {n}");
-                //    break;
-                //}
-                //else if (n == 9)
-                //{
-                //    MessageBox.Show($"Не знаю ( ╯°□°)╯ ┻━━┻");
-                //}                
-            //};
-        }
 
         void OutputTestMnist(int img)
         {
@@ -624,6 +584,5 @@ namespace NeuronBP
                 }
             }
         }
-
     }
 }
