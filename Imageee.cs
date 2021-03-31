@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace NeuronBP
 {
-    public class Image
+    public class Imageee
     {
         public byte Label { get; set; }
         public byte[,] Data { get; set; }

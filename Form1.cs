@@ -38,7 +38,7 @@ namespace NeuronBP
             //    pictureBox1.Image = img;
             //}
 
-            neuron.MnistCheck();
+            neuron.Train();
         }
 
 
@@ -55,16 +55,16 @@ namespace NeuronBP
 
         private void recognizeButton_Click_1(object sender, EventArgs e)
         {
-            label0.Text = $"0: {neuron.Sum(0, img)}";
-            label1.Text = $"1: {neuron.Sum(1, img)}";
-            label2.Text = $"2: {neuron.Sum(2, img)}";
-            label3.Text = $"3: {neuron.Sum(3, img)}";
-            label4.Text = $"4: {neuron.Sum(4, img)}";
-            label5.Text = $"5: {neuron.Sum(5, img)}";
-            label6.Text = $"6: {neuron.Sum(6, img)}";
-            label7.Text = $"7: {neuron.Sum(7, img)}";
-            label8.Text = $"8: {neuron.Sum(8, img)}";
-            label9.Text = $"9: {neuron.Sum(9, img)}";
+            label0.Text = $"0: {neuron.Sefsefum(0, img)}";
+            label1.Text = $"1: {neuron.Sefsefum(1, img)}";
+            label2.Text = $"2: {neuron.Sefsefum(2, img)}";
+            label3.Text = $"3: {neuron.Sefsefum(3, img)}";
+            label4.Text = $"4: {neuron.Sefsefum(4, img)}";
+            label5.Text = $"5: {neuron.Sefsefum(5, img)}";
+            label6.Text = $"6: {neuron.Sefsefum(6, img)}";
+            label7.Text = $"7: {neuron.Sefsefum(7, img)}";
+            label8.Text = $"8: {neuron.Sefsefum(8, img)}";
+            label9.Text = $"9: {neuron.Sefsefum(9, img)}";
             pictureBox1.Image = new Bitmap(pictureBox1.Width, pictureBox1.Height);
         }
 
