@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
-using System.Windows.Forms;
 
 namespace NeuronBP
 {
@@ -22,96 +21,94 @@ namespace NeuronBP
         /// Высота картинки
         /// </summary>
         const byte pictureHeight = 10;
-        
+
         /// <summary>
         /// Ширина картинки
         /// </summary>
         const byte pictureWidth = 10;
-        
+
         /// <summary>
         /// Количество входов сети n
         /// </summary>
         const int inputCount = pictureHeight * pictureWidth;
-        
+
         /// <summary>
         /// Количество нейронов на скрытом слое m
         /// </summary>
         const int hiddenNeuronCount = 80;
-        
+
         /// <summary>
         /// Количество выходов сети p
         /// </summary>
         const byte outputCount = 10;
-        
+
         /// <summary>
         /// Параметр скорости обучения
         /// </summary>
         const float alpha = 0.7f;
-        
+
         /// <summary>
         /// Максимально допустимое число итераций
         /// </summary>
-        const int nmax = 100;        
-        
+        const int nmax = 100;
+
         /// <summary>
         /// Параметр точности обучения на обучающей выборке
         /// </summary>
         float epsilonTrain = 0.0f;
-        
+
         /// <summary>
         /// Параметр точности обучения на тестовой выборке
         /// </summary>
         float epsilonTest = 0.0f;
-        
+
         /// <summary>
         /// Номер эпохи
         /// </summary>
         int epoch = 0;
-        
+
         /// <summary>
         /// Ошибка на обучающей выборке
         /// </summary>
         int errorTrain = 0;
-        
+
         /// <summary>
         /// Ошибка на тестовой выборке
         /// </summary>
         int errorTest = 0;
-        
+
         /// <summary>
         /// Матрица весовых коэффициентов от входов к скрытому слою
         /// </summary>
         float[,] w = new float[inputCount, hiddenNeuronCount];
-        
+
         /// <summary>
         /// Матрица весов, соединяющих скрытый и выходной слой
         /// </summary>
         float[,] v = new float[hiddenNeuronCount, outputCount];
 
-        float[] hiddenAnswerVector = new float[hiddenNeuronCount];
+        /// <summary>
+        /// Выходной вектор скрытого слоя
+        /// </summary>
+        float[] yc = new float[hiddenNeuronCount];
+
         /// <summary>
         /// Полученное реальное значение k-го выхода нейросети
         /// </summary>
-        
         float[] y = new float[outputCount];
+
         /// <summary>
         /// Требуемое(целевое) значение k-го выхода для этого образа
         /// </summary>
-        
         int[] d = new int[outputCount];
+
         /// <summary>
         /// Входной вектор
         /// </summary>
-        
         int[] input = new int[inputCount];
 
-        int[,] trainImages = new int[trainPicturesCount, inputCount];
-        int[] trainLabels = new int[trainPicturesCount];
-        int[,] testImages = new int[testPicturesCount, inputCount];
-        int[] testLabels = new int[testPicturesCount];
-
-        string[] trainImg = new string[trainPicturesCount];
-        string[] testImg = new string[testPicturesCount];
+        int[] trainImg = new int[trainPicturesCount];
+        int[] testImg = new int[testPicturesCount];
         public Bitmap picture;
 
         public void Learn()
@@ -119,34 +116,6 @@ namespace NeuronBP
             if (File.Exists(@"../../../Resources/W.txt") && File.Exists(@"../../../Resources/V.txt")) LoadWeight();
             else
             {
-                //Считывание dataset
-                //int imgCount = 0;
-                //foreach (var image in MnistReader.ReadTrainingData())
-                //{
-                //    int k = 0;
-                //    for (int i = 0; i < pictureHeight; i++)
-                //    {
-                //        for (int j = 0; j < pictureWidth; j++)
-                //        {
-                //            trainImages[imgCount, k++] = image.Data[i, j] > 0? 1 : 0;
-                //        }
-                //    }
-                //    trainLabels[imgCount++] = image.Label;
-                //}
-                //imgCount = 0;
-                //foreach (var image in MnistReader.ReadTestData())
-                //{
-                //    int k = 0;
-                //    for (int i = 0; i < pictureHeight; i++)
-                //    {
-                //        for (int j = 0; j < pictureWidth; j++)
-                //        {
-                //            testImages[imgCount, k++] = image.Data[i, j] > 0 ? 1 : 0;
-                //        }
-                //    }
-                //    testLabels[imgCount++] = image.Label;
-                //}
-
                 //Инициализация случайных весов
                 Random rand = new Random((int)DateTime.Now.Ticks);
                 for (int i = 0; i < inputCount; i++)
@@ -163,10 +132,14 @@ namespace NeuronBP
                         v[j, k] = (float)(rand.Next(-3, 4) / 10.0);
                     }
                 }
-
-                trainImg = RandomImageForLearn(trainPicturesCount);
-                testImg = RandomImageForLearn(testPicturesCount);
-
+                for (int i = 0; i < trainPicturesCount; i++)
+                {
+                    trainImg[i] = i;
+                }
+                for (int i = 0; i < testPicturesCount; i++)
+                {
+                    testImg[i] = i;
+                }
                 Train();
             }
         }
@@ -180,24 +153,22 @@ namespace NeuronBP
             epsilonTest = 0;
             ShuffleTrain();
             ShuffleTest();
-
             for (int img = 0; img < trainPicturesCount; img++)
             {
                 epsilonTrain = 0;
                 picture = (Bitmap)Image.FromFile($"../../../Resources/train/{trainImg[img]}.jpg");
-                int label = int.Parse(trainImg[img]) / (trainPicturesCount / outputCount);
+                int label = trainImg[img] / (trainPicturesCount / outputCount);
                 for (int i = 0; i < outputCount; i++)
                 {
                     d[i] = i == label ? 1 : 0;
                 }
-                Sum(picture);
+                NetworkOutput(picture);
                 WeightCorrect();
 
                 for (int k = 0; k < outputCount; k++)
                 {
                     epsilonTrain += (float)Math.Pow(y[k] - d[k], 2);
                 }
-
                 epsilonTrain /= 2;
 
                 if (epsilonTrain > 0.01)
@@ -205,21 +176,21 @@ namespace NeuronBP
                     errorTrain++;
                 }
             }
-
             for (int img = 0; img < testPicturesCount; img++)
             {
                 epsilonTest = 0;
                 picture = (Bitmap)Image.FromFile($"../../../Resources/test/{testImg[img]}.jpg");
-                int label = int.Parse(testImg[img]) / (testPicturesCount / outputCount);
+                int label = testImg[img] / (testPicturesCount / outputCount);
                 for (int i = 0; i < outputCount; i++)
                 {
                     d[i] = i == label ? 1 : 0;
                 }
-                Sum(picture);
+                NetworkOutput(picture);
 
                 for (int k = 0; k < outputCount; k++)
+                {
                     epsilonTest += (float)Math.Pow(y[k] - d[k], 2);
-
+                }
                 epsilonTest /= 2;
 
                 if (epsilonTest > 0.01)
@@ -227,7 +198,6 @@ namespace NeuronBP
                     errorTest++;
                 }
             }
-
             Debug.WriteLine($"Эпоха = {epoch}");
             Debug.WriteLine($"error1 = {errorTrain}");
             Debug.WriteLine($"error2 = {errorTest}");
@@ -235,21 +205,21 @@ namespace NeuronBP
             Debug.WriteLine($"epsilon2 = {epsilonTest}");
             Debug.WriteLine("");
 
-            if (epsilonTest > 0.001  || errorTrain > 9 /*&& epoch < nmax*/)
+            if (epsilonTest > 0.001 && epoch < nmax)
             {
                 Train();
             }
             else
             {
                 Debug.WriteLine("Обучился");
-                //SaveWeight();
+                SaveWeight();
             }
         }
 
-        void Sum(Bitmap img)
+        void NetworkOutput(Bitmap img)
         {
-            float[] HiddenLayerSum = new float[hiddenNeuronCount];
-            float[] OutputLayerSum = new float[outputCount];
+            float[] sum1 = new float[hiddenNeuronCount];
+            float[] sum2 = new float[outputCount];
             LeadArray(CutImage(img, new Point(img.Width, img.Height)), input);
 
             for (int j = 0; j < hiddenNeuronCount; j++)
@@ -258,27 +228,25 @@ namespace NeuronBP
                 {
                     if (input[i] != 0)
                     {
-                        HiddenLayerSum[j] += input[i] * w[i, j];
+                        sum1[j] += input[i] * w[i, j];
                     }
                 }
-                hiddenAnswerVector[j] = SigmoidFunction(HiddenLayerSum[j]);
+                yc[j] = SigmoidFunction(sum1[j]);
             }
 
             for (int k = 0; k < outputCount; k++)
             {
                 for (int j = 0; j < hiddenNeuronCount; j++)
                 {
-                    OutputLayerSum[k] += hiddenAnswerVector[j] * v[j, k];
+                    sum2[k] += yc[j] * v[j, k];
                 }
-                y[k] = SigmoidFunction(OutputLayerSum[k]);
+                y[k] = SigmoidFunction(sum2[k]);
             }
         }
 
         /// <summary>
-        /// Активационная функция - сигмоида
+        /// Активационная функция
         /// </summary>
-        /// <param name="x">Сумма весов нейрона</param>
-        /// <returns></returns>
         static float SigmoidFunction(float x)
         {
             return 1f / (1f + (float)Math.Exp(-x));
@@ -292,7 +260,7 @@ namespace NeuronBP
                 float delta = (y[k] - d[k]) * y[k] * (1f - y[k]);
                 for (int j = 0; j < hiddenNeuronCount; j++)
                 {
-                    v[j, k] -= alpha * delta * hiddenAnswerVector[j];
+                    v[j, k] -= alpha * delta * yc[j];
                     sum[j] += delta * v[j, k];
                 }
             }
@@ -302,7 +270,7 @@ namespace NeuronBP
                 {
                     if (input[i] != 0)
                     {
-                        w[i, j] -= alpha * (sum[j] * hiddenAnswerVector[j] * (1f - hiddenAnswerVector[j]) * input[i]);
+                        w[i, j] -= alpha * (sum[j] * yc[j] * (1f - yc[j]) * input[i]);
                     }
                 }
             }
@@ -315,7 +283,7 @@ namespace NeuronBP
             {
                 int rnd = rand.Next();
                 int j = rnd % (i + 1);
-                string tmp = trainImg[j];
+                int tmp = trainImg[j];
                 trainImg[j] = trainImg[i];
                 trainImg[i] = tmp;
             }
@@ -328,36 +296,28 @@ namespace NeuronBP
             {
                 int rnd = rand.Next();
                 int j = rnd % (i + 1);
-                string tmp = testImg[j];
+                int tmp = testImg[j];
                 testImg[j] = testImg[i];
                 testImg[i] = tmp;
             }
-        }
-
-        public string[] RandomImageForLearn(int size)
-        {
-            string[] randomList = new string[size];
-            for (int i = 0; i < size; i++)
-            {
-                randomList[i] = $"{i}";
-            }
-            return randomList;
         }
 
         public double Recognize(int n, Bitmap img)
         {
             double ymax = 0d;
             double ymin = 0d;
-            Sum(img);
+            NetworkOutput(img);
             for (int k = 0; k < outputCount; k++)
             {
                 if (ymax < y[k]) ymax = y[k];
                 if (ymin > y[k]) ymin = y[k];
             }
-            return (y[n] - ymin)/(ymax-ymin);
+            return (y[n] - ymin) / (ymax - ymin);
         }
 
-        // Процедура обрезание рисунка по краям и преобразование в массив.
+        /// <summary>
+        /// Процедура обрезание рисунка по краям и преобразование в массив
+        /// </summary>
         public int[,] CutImage(Bitmap b, Point max)
         {
             var x1 = 0;
@@ -398,7 +358,9 @@ namespace NeuronBP
             return res;
         }
 
-        // Пересчёт матрицы source в массив res, для приведения произвольного массива данных к массиву стандартных размеров.
+        /// <summary>
+        /// Пересчёт матрицы source в массив res, для приведения произвольного массива данных к массиву стандартных размеров
+        /// </summary>
         public void LeadArray(int[,] source, int[] ans)
         {
             int k = 0;
@@ -467,116 +429,6 @@ namespace NeuronBP
                 }
             }
             vStreamReader.Close();
-        }
-
-        void OutputTestMnist(int img)
-        {
-            for (int k = 0; k < outputCount; k++)
-            {
-                d[k] = k == testLabels[img] ? 1 : 0;
-            }
-            float[] HiddenLayerSum = new float[hiddenNeuronCount];
-            float[] OutputLayerSum = new float[outputCount];
-            Array.Clear(HiddenLayerSum, 0, HiddenLayerSum.Length);
-            Array.Clear(OutputLayerSum, 0, OutputLayerSum.Length);
-
-            for (int j = 0; j < hiddenNeuronCount; j++)
-            {
-                for (int i = 0; i < inputCount; i++)
-                {
-                    if (testImages[img, i] != 0)
-                    {
-                        HiddenLayerSum[j] += testImages[img, i] * w[i, j];
-                    }
-                }
-            }
-
-            for (int j = 0; j < hiddenNeuronCount; j++)
-            {
-                hiddenAnswerVector[j] = SigmoidFunction(HiddenLayerSum[j]);
-            }
-
-            for (int k = 0; k < outputCount; k++)
-            {
-                for (int j = 0; j < hiddenNeuronCount; j++)
-                {
-                    OutputLayerSum[k] += hiddenAnswerVector[j] * v[j, k];
-                }
-            }
-
-            for (int k = 0; k < outputCount; k++)
-            {
-                y[k] = SigmoidFunction(OutputLayerSum[k]);
-            }
-        }
-
-        void OutputTrainMnist(int img)
-        {
-            for (int k = 0; k < outputCount; k++)
-            {
-                d[k] = k == trainLabels[img] ? 1 : 0;
-            }
-            float[] HiddenLayerSum = new float[hiddenNeuronCount];
-            float[] OutputLayerSum = new float[outputCount];
-            Array.Clear(HiddenLayerSum, 0, HiddenLayerSum.Length);
-            Array.Clear(OutputLayerSum, 0, OutputLayerSum.Length);
-
-
-            for (int j = 0; j < hiddenNeuronCount; j++)
-            {
-                for (int i = 0; i < inputCount; i++)
-                {
-                    if (trainImages[img, i] != 0)
-                    {
-                        HiddenLayerSum[j] += trainImages[img, i] * w[i, j];
-                    }
-                }
-            }
-
-            for (int j = 0; j < hiddenNeuronCount; j++)
-            {
-                hiddenAnswerVector[j] = SigmoidFunction(HiddenLayerSum[j]);
-            }
-
-            for (int k = 0; k < outputCount; k++)
-            {
-                for (int j = 0; j < hiddenNeuronCount; j++)
-                {
-                    OutputLayerSum[k] += hiddenAnswerVector[j] * v[j, k];
-                }
-            }
-
-            for (int k = 0; k < outputCount; k++)
-            {
-                y[k] = SigmoidFunction(OutputLayerSum[k]);
-            }
-        }
-
-        void WeightCorrectMnist(int img)
-        {
-            float[] TempHiddenLayerSum = new float[hiddenNeuronCount];
-            Array.Clear(TempHiddenLayerSum, 0, TempHiddenLayerSum.Length);
-
-            for (int k = 0; k < outputCount; k++)
-            {
-                float delta = (y[k] - d[k]) * y[k] * (1f - y[k]);
-                for (int j = 0; j < hiddenNeuronCount; j++)
-                {
-                    v[j, k] -= alpha * delta * hiddenAnswerVector[j];
-                    TempHiddenLayerSum[j] += delta * v[j, k];
-                }
-            }
-
-            for (int j = 0; j < hiddenNeuronCount; j++) // входной слой
-            {
-                for (int i = 0; i < inputCount; i++)
-                {
-                    if (trainImages[img, i] != 0)
-                    {
-                        w[i, j] -= alpha * (TempHiddenLayerSum[j] * hiddenAnswerVector[j] * (1f - hiddenAnswerVector[j]) * trainImages[img, i]);
-                    }
-                }
-            }
         }
     }
 }
