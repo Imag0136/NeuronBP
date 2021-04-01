@@ -36,7 +36,7 @@ namespace NeuronBP
         /// <summary>
         /// Количество нейронов на скрытом слое m
         /// </summary>
-        const int hiddenNeuronCount = 20;
+        const int hiddenNeuronCount = 80;
         
         /// <summary>
         /// Количество выходов сети p
@@ -46,12 +46,12 @@ namespace NeuronBP
         /// <summary>
         /// Параметр скорости обучения
         /// </summary>
-        const float alpha = 0.1f;
+        const float alpha = 0.7f;
         
         /// <summary>
         /// Максимально допустимое число итераций
         /// </summary>
-        const int nmax = 1000;        
+        const int nmax = 100;        
         
         /// <summary>
         /// Параметр точности обучения на обучающей выборке
@@ -198,7 +198,7 @@ namespace NeuronBP
                     epsilonTrain += (float)Math.Pow(y[k] - d[k], 2);
                 }
 
-                epsilonTrain /= 10;
+                epsilonTrain /= 2;
 
                 if (epsilonTrain > 0.01)
                 {
@@ -220,7 +220,7 @@ namespace NeuronBP
                 for (int k = 0; k < outputCount; k++)
                     epsilonTest += (float)Math.Pow(y[k] - d[k], 2);
 
-                epsilonTest /= 10;
+                epsilonTest /= 2;
 
                 if (epsilonTest > 0.01)
                 {
@@ -235,11 +235,7 @@ namespace NeuronBP
             Debug.WriteLine($"epsilon2 = {epsilonTest}");
             Debug.WriteLine("");
 
-            if (epsilonTest < 0.001)
-            {
-
-            }
-            if (epsilonTest > 0.0005 && epoch < nmax)
+            if (epsilonTest > 0.001  || errorTrain > 9 /*&& epoch < nmax*/)
             {
                 Train();
             }
