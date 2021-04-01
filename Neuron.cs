@@ -239,7 +239,7 @@ namespace NeuronBP
             {
 
             }
-            if (errorTest > 30 && epoch < nmax)
+            if (epsilonTest > 0.0005 && epoch < nmax)
             {
                 Train();
             }
@@ -407,8 +407,6 @@ namespace NeuronBP
         {
             int k = 0;
             int[,] res = new int[pictureHeight, pictureWidth];
-            for (var n = 0; n < res.GetLength(0); n++)
-                for (var m = 0; m < res.GetLength(1); m++) res[n, m] = 0;
 
             var pX = (double)res.GetLength(0) / (double)source.GetLength(0);
             var pY = (double)res.GetLength(1) / (double)source.GetLength(1);
