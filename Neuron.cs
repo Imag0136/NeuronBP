@@ -35,7 +35,7 @@ namespace NeuronBP
         /// <summary>
         /// Количество нейронов на скрытом слое m
         /// </summary>
-        const int hiddenNeuronCount = 30;
+        const int hiddenNeuronCount = 80;
 
         /// <summary>
         /// Количество выходов сети p
@@ -45,7 +45,7 @@ namespace NeuronBP
         /// <summary>
         /// Параметр скорости обучения
         /// </summary>
-        const float alpha = 0.5f;
+        const float alpha = 0.7f;
 
         /// <summary>
         /// Максимально допустимое число итераций
@@ -113,6 +113,9 @@ namespace NeuronBP
 
         float[] biasH = new float[hiddenNeuronCount];
         float[] biasO = new float[outputCount];
+
+        float[] prevMoment1 = new float[hiddenNeuronCount];
+        float[] prevMoment2 = new float[inputCount];
 
         public void Learn()
         {
@@ -217,17 +220,20 @@ namespace NeuronBP
             Debug.WriteLine($"epsilon2 = {epsilonTest}");
             Debug.WriteLine("");
 
-            if (errorTest > 2 && epoch < nmax)
+            if (epsilonTest > 0.001 && epoch < nmax)
             {
                 Train();
             }
             else
             {
                 Debug.WriteLine("Обучился");
-                //SaveWeight();
+                SaveWeight();
             }
         }
 
+        /// <summary>
+        /// Высчитывает выход нейронной сети
+        /// </summary>
         void NetworkOutput(Bitmap img)
         {
             float[] sum1 = new float[hiddenNeuronCount];
@@ -269,11 +275,13 @@ namespace NeuronBP
             float[] sum = new float[hiddenNeuronCount];
             for (int k = 0; k < outputCount; k++)
             {
-                float delta = (y[k] - d[k]) * y[k] * (1f - y[k]);
+                float delta = (y[k] - d[k]) * y[k] * (1f - y[k]);                
                 for (int j = 0; j < hiddenNeuronCount; j++)
                 {
-                    v[j, k] -= alpha * delta * yc[j];
+                    float momentum = delta * yc[j] * prevMoment1[j] > 0 ? 1.2f : 0.5f;
+                    v[j, k] -= alpha * delta * yc[j] * momentum;
                     sum[j] += delta * v[j, k];
+                    prevMoment1[j] = delta * yc[j];
                 }
                 biasO[k] -= alpha * delta;
             }
@@ -283,7 +291,9 @@ namespace NeuronBP
                 {
                     if (input[i] != 0)
                     {
-                        w[i, j] -= alpha * (sum[j] * yc[j] * (1f - yc[j]) * input[i]);
+                        float momentum = sum[j] * yc[j] * (1f - yc[j]) * input[i] * prevMoment2[i] > 0 ? 1.2f : 0.5f;
+                        w[i, j] -= alpha * (sum[j] * yc[j] * (1f - yc[j]) * input[i]) * momentum;
+                        prevMoment2[i] = sum[j] * yc[j] * (1f - yc[j]) * input[i];
                     }
                 }
                 biasH[j] -= alpha * (sum[j] * yc[j] * (1f - yc[j]));
