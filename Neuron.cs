@@ -35,7 +35,7 @@ namespace NeuronBP
         /// <summary>
         /// Количество нейронов на скрытом слое m
         /// </summary>
-        const int hiddenNeuronCount = 80;
+        const int hiddenNeuronCount = 30;
 
         /// <summary>
         /// Количество выходов сети p
@@ -45,7 +45,7 @@ namespace NeuronBP
         /// <summary>
         /// Параметр скорости обучения
         /// </summary>
-        const float alpha = 0.7f;
+        const float alpha = 0.5f;
 
         /// <summary>
         /// Максимально допустимое число итераций
@@ -111,6 +111,9 @@ namespace NeuronBP
         int[] testImg = new int[testPicturesCount];
         public Bitmap picture;
 
+        float[] biasH = new float[hiddenNeuronCount];
+        float[] biasO = new float[outputCount];
+
         public void Learn()
         {
             if (File.Exists(@"../../../Resources/W.txt") && File.Exists(@"../../../Resources/V.txt")) LoadWeight();
@@ -122,15 +125,24 @@ namespace NeuronBP
                 {
                     for (int j = 0; j < hiddenNeuronCount; j++)
                     {
-                        w[i, j] = (float)(rand.Next(-3, 4) / 10.0);
+                        w[i, j] = (float)(rand.Next(-3, 4) / 10.0);                        
                     }
                 }
                 for (int j = 0; j < hiddenNeuronCount; j++)
                 {
                     for (int k = 0; k < outputCount; k++)
                     {
-                        v[j, k] = (float)(rand.Next(-3, 4) / 10.0);
+                        v[j, k] = (float)(rand.Next(-3, 4) / 10.0);                        
                     }
+                }
+
+                for (int j = 0; j < hiddenNeuronCount; j++)
+                {
+                    biasH[j] = (float)(rand.Next(-3, 4) / 10.0);
+                }
+                for (int k = 0; k < outputCount; k++)
+                {
+                    biasO[k] = (float)(rand.Next(-3, 4) / 10.0);
                 }
                 for (int i = 0; i < trainPicturesCount; i++)
                 {
@@ -205,14 +217,14 @@ namespace NeuronBP
             Debug.WriteLine($"epsilon2 = {epsilonTest}");
             Debug.WriteLine("");
 
-            if (epsilonTest > 0.001 && epoch < nmax)
+            if (errorTest > 2 && epoch < nmax)
             {
                 Train();
             }
             else
             {
                 Debug.WriteLine("Обучился");
-                SaveWeight();
+                //SaveWeight();
             }
         }
 
@@ -231,7 +243,7 @@ namespace NeuronBP
                         sum1[j] += input[i] * w[i, j];
                     }
                 }
-                yc[j] = SigmoidFunction(sum1[j]);
+                yc[j] = SigmoidFunction(sum1[j] + biasH[j]);
             }
 
             for (int k = 0; k < outputCount; k++)
@@ -240,7 +252,7 @@ namespace NeuronBP
                 {
                     sum2[k] += yc[j] * v[j, k];
                 }
-                y[k] = SigmoidFunction(sum2[k]);
+                y[k] = SigmoidFunction(sum2[k] + biasO[k]);                
             }
         }
 
@@ -263,6 +275,7 @@ namespace NeuronBP
                     v[j, k] -= alpha * delta * yc[j];
                     sum[j] += delta * v[j, k];
                 }
+                biasO[k] -= alpha * delta;
             }
             for (int j = 0; j < hiddenNeuronCount; j++)
             {
@@ -273,6 +286,7 @@ namespace NeuronBP
                         w[i, j] -= alpha * (sum[j] * yc[j] * (1f - yc[j]) * input[i]);
                     }
                 }
+                biasH[j] -= alpha * (sum[j] * yc[j] * (1f - yc[j]));
             }
         }
 
